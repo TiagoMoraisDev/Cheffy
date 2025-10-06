@@ -1,0 +1,6 @@
+export const environment = {
+  production: false,
+  supabaseUrl: 'https://elnfyoutlfralieighua.supabase.co',
+  supabaseKey:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbmZ5b3V0bGZyYWxpZWlnaHVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MDY4ODksImV4cCI6MjA3NTI4Mjg4OX0.uOm3ip8HE4X6nq7Ln3J-gc2qc8WDSdxoTKLlNjAcqU8',
+};
