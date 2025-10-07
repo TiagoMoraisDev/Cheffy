@@ -30,6 +30,7 @@ export class ZApiService {
     message: string,
     phone: string = this.defaultPhone
   ): Observable<SendTextResponse> {
+    console.log('sendText', message, phone);
     const url = `${this.baseUrl}/send-text`;
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
