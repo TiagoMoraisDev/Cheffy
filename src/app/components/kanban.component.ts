@@ -10,6 +10,8 @@ import { ConfirmationDialogComponent } from './confirmation-dialog.component';
 import { ZApiService } from '../services/z-api.service';
 import { switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { OrderDto } from '../models/dto/order';
+import { OrderService } from '../services/order.service';
 
 type Order = {
   id: number;
@@ -42,19 +44,19 @@ type Order = {
             >
               <div class="flex items-start justify-between gap-2">
                 <div>
-                  <div class="font-medium">{{ pedido.title }}</div>
+                  <div class="font-medium">{{ pedido.client_name }}</div>
                   <div class="text-sm text-gray-500">#{{ pedido.id }}</div>
                   <div
-                    *ngIf="pedido.description"
+                    *ngIf="pedido.localization"
                     class="text-sm text-gray-600 mt-1"
                   >
-                    {{ pedido.description }}
+                    {{ pedido.localization }}
                   </div>
                 </div>
               </div>
               <div class="mt-3">
                 <button
-                  (click)="confirmarAceitarPedido(pedido.id)"
+                  (click)="confirmarAceitarPedido(pedido.id, pedido.phone)"
                   class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-2 rounded-md"
                 >
                   Aceitar Pedido
@@ -80,18 +82,18 @@ type Order = {
               class="border rounded-lg p-3 bg-white shadow-sm"
             >
               <div>
-                <div class="font-medium">{{ pedido.title }}</div>
+                <div class="font-medium">{{ pedido.client_name }}</div>
                 <div class="text-sm text-gray-500">#{{ pedido.id }}</div>
                 <div
-                  *ngIf="pedido.description"
+                  *ngIf="pedido.localization"
                   class="text-sm text-gray-600 mt-1"
                 >
-                  {{ pedido.description }}
+                  {{ pedido.localization }}
                 </div>
               </div>
               <div class="mt-3">
                 <button
-                  (click)="confirmarFinalizarPreparo(pedido.id)"
+                  (click)="confirmarFinalizarPreparo(pedido.id, pedido.phone)"
                   class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-2 rounded-md"
                 >
                   Finalizar Preparo
@@ -117,13 +119,13 @@ type Order = {
               class="border rounded-lg p-3 bg-white shadow-sm"
             >
               <div>
-                <div class="font-medium">{{ pedido.title }}</div>
+                <div class="font-medium">{{ pedido.client_name }}</div>
                 <div class="text-sm text-gray-500">#{{ pedido.id }}</div>
                 <div
-                  *ngIf="pedido.description"
+                  *ngIf="pedido.localization"
                   class="text-sm text-gray-600 mt-1"
                 >
-                  {{ pedido.description }}
+                  {{ pedido.localization }}
                 </div>
               </div>
               <div class="mt-2 text-xs text-gray-500">Concluído</div>
@@ -139,17 +141,25 @@ export class KanbanComponent {
   private dialog = inject(Dialog);
   private cdr = inject(ChangeDetectorRef);
   private zApiService = inject(ZApiService);
+  private orderService = inject(OrderService);
+  recebidos: OrderDto[] = [];
+  emPreparo: OrderDto[] = [];
+  feitos: OrderDto[] = [];
 
-  recebidos: Order[] = [
-    { id: 101, title: 'Pedido 101', description: '2x Hamburguer, 1x Suco' },
-    { id: 102, title: 'Pedido 102', description: '1x Pizza Margherita' },
-    { id: 103, title: 'Pedido 103', description: '3x Pastel, 2x Refrigerante' },
-  ];
+  ngOnInit() {
+    this.fetchOrders();
+  }
 
-  emPreparo: Order[] = [];
-  feitos: Order[] = [];
+  fetchOrders() {
+    this.orderService.listOrdersForCurrentUser().then((orders: OrderDto[]) => {
+      this.recebidos = orders.filter((order) => order.status === 'received');
+      this.emPreparo = orders.filter((order) => order.status === 'accepted');
+      this.feitos = orders.filter((order) => order.status === 'ready');
+      this.cdr.detectChanges();
+    });
+  }
 
-  confirmarAceitarPedido(orderId: number) {
+  confirmarAceitarPedido(orderId: number, phone: string) {
     const ref = this.dialog.open(ConfirmationDialogComponent, {
       data: { mensagem: 'Tem certeza que deseja aceitar este pedido?' },
       backdropClass: 'bg-black/70',
@@ -159,8 +169,7 @@ export class KanbanComponent {
       .pipe(
         switchMap((result) => {
           if (result === 'sim') {
-            this.aceitarPedido(orderId);
-            return this.zApiService.sendText(`Pedido ${orderId} aceito!`);
+            this.aceitarPedido(orderId, phone);
           }
           return of(null);
         })
@@ -168,16 +177,16 @@ export class KanbanComponent {
       .subscribe();
   }
 
-  aceitarPedido(orderId: number): void {
-    const index = this.recebidos.findIndex((o) => o.id === orderId);
-    if (index !== -1) {
-      const [pedido] = this.recebidos.splice(index, 1);
-      this.emPreparo.push(pedido);
-      this.cdr.detectChanges();
-    }
+  aceitarPedido(orderId: number, phone: string): void {
+    this.orderService.updateOrderStatus(orderId, 'accepted').then(() => {
+      this.fetchOrders();
+      return this.zApiService
+        .sendText(`Pedido ${orderId} aceito!`, phone)
+        .subscribe();
+    });
   }
 
-  confirmarFinalizarPreparo(orderId: number) {
+  confirmarFinalizarPreparo(orderId: number, phone: string) {
     const ref = this.dialog.open(ConfirmationDialogComponent, {
       data: { mensagem: 'Tem certeza que deseja finalizar o preparo?' },
       backdropClass: 'bg-black/70',
@@ -186,22 +195,20 @@ export class KanbanComponent {
       .pipe(
         switchMap((result) => {
           if (result === 'sim') {
-            this.finalizarPreparo(orderId);
-            return this.zApiService.sendText(`Pedido ${orderId} finalizado!`);
+            this.finalizarPreparo(orderId, phone);
           }
-          // Se não for 'sim', retorna um observable vazio
           return of(null);
         })
       )
       .subscribe();
   }
 
-  finalizarPreparo(orderId: number): void {
-    const index = this.emPreparo.findIndex((o) => o.id === orderId);
-    if (index !== -1) {
-      const [pedido] = this.emPreparo.splice(index, 1);
-      this.feitos.push(pedido);
-      this.cdr.detectChanges();
-    }
+  finalizarPreparo(orderId: number, phone: string): void {
+    this.orderService.updateOrderStatus(orderId, 'ready').then(() => {
+      this.fetchOrders();
+      return this.zApiService
+        .sendText(`Pedido ${orderId} finalizado!`, phone)
+        .subscribe();
+    });
   }
 }

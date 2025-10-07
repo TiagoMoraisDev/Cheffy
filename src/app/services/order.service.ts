@@ -23,4 +23,18 @@ export class OrderService {
     console.log('data', data);
     return data ?? [];
   }
+
+  async updateOrderStatus(
+    orderId: number,
+    status: 'received' | 'accepted' | 'ready' | 'for_delivery'
+  ) {
+    const { data, error } = await this.supabaseService.client
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
 }
