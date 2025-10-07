@@ -16,6 +16,13 @@ export interface Profile {
   avatar_url: string;
 }
 
+export interface IUser {
+  email: string;
+  name: string;
+  website: string;
+  url: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
