@@ -16,13 +16,6 @@ export interface Profile {
   avatar_url: string;
 }
 
-export interface IUser {
-  email: string;
-  name: string;
-  website: string;
-  url: string;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -37,10 +30,20 @@ export class SupabaseService {
     );
   }
 
+  get client(): SupabaseClient {
+    return this.supabase;
+  }
+
   get session() {
     this.supabase.auth.getSession().then(({ data }) => {
       this._session = data.session;
     });
+    return this._session;
+  }
+
+  async getSession() {
+    const { data } = await this.supabase.auth.getSession();
+    this._session = data.session;
     return this._session;
   }
 
