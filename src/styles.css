@@ -1,1 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+/* Opcionalmente, se você estiver usando a sintaxe tradicional de camadas do Tailwind (v3 e anteriores) */
+/*
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+*/
+
+/* Seus estilos globais adicionais aqui */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
