@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { KanbanComponent } from '../../components/kanban.component';
-import { ButtonComponent } from '../../components/button.component';
-import { ModalButtonComponent } from '../../components/modal-button.component';
+import { OrderService } from '../../services/order.service';
+import { OrderDto } from '../../models/dto/order';
 
 @Component({
   selector: 'app-painel',
